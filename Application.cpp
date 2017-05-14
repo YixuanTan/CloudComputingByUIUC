@@ -136,7 +136,6 @@ void Application::mp1Run() {
 
 	// For all the nodes in the system
 	for( i = par->EN_GPSZ - 1; i >= 0; i-- ) {
-
 		/*
 		 * Introduce nodes into the distributed system
 		 */

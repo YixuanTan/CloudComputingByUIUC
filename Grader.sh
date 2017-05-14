@@ -31,12 +31,15 @@ echo "============================"
 if [ $verbose -eq 0 ]; then
 	make clean > /dev/null
 	make > /dev/null
+	echo "11111"
 	./Application testcases/singlefailure.conf > /dev/null
 else
 	make clean
 	make
+	echo "22222"
 	./Application testcases/singlefailure.conf
 fi
+
 joincount=`grep joined dbg.log | cut -d" " -f2,4-7 | sort -u | wc -l`
 if [ $joincount -eq 100 ]; then
 	grade=`expr $grade + 10`

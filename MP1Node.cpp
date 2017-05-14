@@ -139,9 +139,6 @@ int MP1Node::introduceSelfToGroup(Address *joinaddr) {
         msg->msgType = JOINREQ;
         memcpy((char *)(msg+1), &memberNode->addr.addr, sizeof(memberNode->addr.addr));
         memcpy((char *)(msg+1) + sizeof(memberNode->addr.addr) + 1, &memberNode->heartbeat, sizeof(long));
-        //stringstream log_msg;
-        //log_msg << "Writing heartbeat " << memberNode->heartbeat;
-        //log->LOG(&memberNode->addr, log_msg.str().c_str());
 
 #ifdef DEBUGLOG
         sprintf(s, "Trying to join...");
@@ -256,20 +253,24 @@ bool MP1Node::recvCallBack(void *env, char *data, int size ) {
 }
 
 Address AddressFromMLE(MemberListEntry* mle) {
-    Address a;
-    memcpy(a.addr, &mle->id, sizeof(int));
-    memcpy(&a.addr[4], &mle->port, sizeof(short));
+    Address a; // create an Address instance a 
+    // copy things from mle
+    memcpy(a.addr, &mle->id, sizeof(int)); 
+    memcpy(&a.addr[4], &mle->port, sizeof(short)); // addr[4] is port #
     return a;
 }
 
 void MP1Node::onJoin(Address* addr, void* data, size_t size) {
-    MessageHdr* msg;
-    size_t msgsize = sizeof(MessageHdr) + sizeof(memberNode->addr) + sizeof(long) + 1;
-    msg = (MessageHdr *) malloc(msgsize * sizeof(char));
+    //MessageHdr* msg;
+    //size_t msgsize = sizeof(MessageHdr) + sizeof(memberNode->addr) + sizeof(long) + 1;
+    //msg = (MessageHdr *) malloc(msgsize * sizeof(char));
+    MessageHdr* msg = new MessageHdr();
     msg->msgType = JOINREP;
 
-    memcpy((char *)(msg+1), &memberNode->addr, sizeof(memberNode->addr));
-    memcpy((char *)(msg+1) + sizeof(memberNode->addr) + 1, &memberNode->heartbeat, sizeof(long));
+    //memcpy((char *)(msg+1), &memberNode->addr, sizeof(memberNode->addr));
+    //memcpy((char *)(msg+1) + sizeof(memberNode->addr) + 1, &memberNode->heartbeat, sizeof(long));
+    msg->addr = memberNode->addr;
+    msg->heartbeat = memeber
     
   stringstream ss;
   ss<< "Sending JOINREP to " << addr->getAddress() <<" heartbeat "<<memberNode->heartbeat;
@@ -310,11 +311,12 @@ bool MP1Node::UpdateMemberList(Address *addr, long heartbeat)  {
             }
         }
     }
+    // create a new element 
     MemberListEntry mle(*((int*)addr->addr),
               *((short*)&(addr->addr[4])),
               heartbeat,
-              par->getcurrtime());
-    memberNode->memberList.push_back(mle);
+              par->getcurrtime()); 
+    memberNode->memberList.push_back(mle); // push_back the new element
     log->logNodeAdd(&memberNode->addr, addr);
     return true;
 }
@@ -328,7 +330,19 @@ bool MP1Node::UpdateMemberList(Address *addr, long heartbeat)  {
  */
 void MP1Node::nodeLoopOps() {
     int timeout = 5;
+    stringstream ss;
+    sort(memberNode->memberList.begin(), memberNode->memberList.end(), [](const MemberListEntry&a, const MemberListEntry&b){
+        return it->timestamp > it->timestamp;
+    });
 
+    while(!(memeberNode->memberList.empty()) && par->getcurrtime() - memeberNode->memberList.back().timestamp > timeout) {
+        Address addr = memeberNode->memberList[memeberNode->memberList.size() - 1];
+        memeberNode->memberList.pop_back();
+        LogMemberList();
+        log->logNodeRemove(&memberNode->addr, &addr);
+    }
+
+    /*
     stringstream ss;
     for (vector<MemberListEntry>::iterator it = memberNode->memberList.begin(); it != memberNode->memberList.end(); it++) {
       //ss << "Current: " << par->getcurrtime() << " ts: " << it->timestamp << " id: "<< it->id;
@@ -350,7 +364,8 @@ void MP1Node::nodeLoopOps() {
         LogMemberList();
         log->logNodeRemove(&memberNode->addr, &addr);
       }
-  }
+      
+    }*/
     /*
      * Your code goes here
      */
@@ -386,13 +401,6 @@ Address MP1Node::getJoinAddress() {
 
     return joinaddr;
 }
-
-//MemberListEntry MLEFromAddr(Address* addr) {
-//  MemberListEntry mle(0, 0);
-//  memcpy(&mle.id, addr->addr, sizeof(int));
-//  memcpy(&mle.port, addr->addr + 4, sizeof(short));
-//  return mle;
-//}
 
 /**
  * FUNCTION NAME: initMemberListTable
